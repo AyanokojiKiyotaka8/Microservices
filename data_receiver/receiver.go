@@ -8,17 +8,16 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 )
 
-var kafkaTopic = "obudata"
-
 type DataProducer interface {
 	ProduceData(types.OBUData) error
 }
 
 type KafkaProducer struct {
 	producer *kafka.Producer
+	topic    string
 }
 
-func NewKafkaProducer() (*KafkaProducer, error) {
+func NewKafkaProducer(topic string) (DataProducer, error) {
 	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": "localhost"})
 	if err != nil {
 		return nil, err
@@ -39,6 +38,7 @@ func NewKafkaProducer() (*KafkaProducer, error) {
 
 	return &KafkaProducer{
 		producer: p,
+		topic:    topic,
 	}, nil
 }
 
@@ -49,7 +49,7 @@ func (p *KafkaProducer) ProduceData(data types.OBUData) error {
 	}
 
 	return p.producer.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &kafkaTopic, Partition: kafka.PartitionAny},
+		TopicPartition: kafka.TopicPartition{Topic: &p.topic, Partition: kafka.PartitionAny},
 		Value:          b,
 	}, nil)
 }
